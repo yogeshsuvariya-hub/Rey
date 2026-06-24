@@ -373,13 +373,17 @@
         const fileName = `Quotation_${customerName}_${quoteNo}.pdf`;
 
         const opt = {
-            margin:       0.3,
+            margin:       [0.3, 0.2, 0.3, 0.2],
             filename:     fileName,
-            image:        { type: 'jpeg', quality: 0.98 },
+            image:        { type: 'jpeg', quality: 1 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
-        html2pdf().set(opt).from(element).save();
+
+        // Delay ઉમેર્યો જેથી ફોટા અને સ્ટાઇલ બરાબર લોડ થાય
+        setTimeout(() => {
+            html2pdf().set(opt).from(element).save();
+        }, 500);
     }
 
     // Function to Send WhatsApp
@@ -411,7 +415,7 @@
     }
 
     // Function to Save PDF to Google Drive
-    function saveToDrive() {
+   function saveToDrive() {
         let custName = document.getElementById('qCustName').innerText;
         if(custName === "Customer Name" || custName === "") {
             alert("Please generate the quotation first!");
@@ -427,46 +431,41 @@
         btn.disabled = true;
 
         const opt = {
-            margin:       0.3,
+            margin:       [0.3, 0.2, 0.3, 0.2],
             filename:     fileName,
-            image:        { type: 'jpeg', quality: 0.98 },
+            image:        { type: 'jpeg', quality: 1 },
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(element).outputPdf('datauristring').then(function(pdfBase64) {
-            let base64Data = pdfBase64.split(',')[1];
+        // Delay સાથે PDF જનરેટ કરો
+        setTimeout(() => {
+            html2pdf().set(opt).from(element).outputPdf('datauristring').then(function(pdfBase64) {
+                let base64Data = pdfBase64.split(',')[1];
+                let scriptURL = "https://script.google.com/macros/s/AKfycbx9XFkos_FOQSM9gfByhAIgH06k9xVEV2USDsNYcz61tG7s8o23A1CKRP4dcgUFYSSI/exec";
 
-            // ---------------------------------------------------------
-            // તમારો WEB APP URL (અહીં અપડેટ કરેલો છે)
-            let scriptURL = "https://script.google.com/macros/s/AKfycbzPTF_xtOI9ucOMjDiNtJiWXpY14qLbeXR7kdNtynF6zQ2y47UdF9hHSRrtvffXhsWb/exec";
-            // ---------------------------------------------------------
-
-            fetch(scriptURL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    filename: fileName,
-                    base64: base64Data
+                fetch(scriptURL, {
+                    method: 'POST',
+                    body: JSON.stringify({ filename: fileName, base64: base64Data })
                 })
-            })
-            .then(response => response.text())
-            .then(result => {
-                if(result.includes("Success")) {
-                    btn.innerText = "✅ Saved to Drive";
-                    alert("Quotation successfully saved to Google Drive!");
-                } else {
-                    btn.innerText = "❌ Error";
-                    alert("Failed to save: " + result);
-                }
-                setTimeout(() => { btn.innerText = "☁️ Save to Drive"; btn.disabled = false; }, 3000);
-            })
-            .catch(error => {
-                console.error('Error!', error);
-                btn.innerText = "❌ Upload Failed";
-                btn.disabled = false;
-                alert("Internet or connection error!");
+                .then(response => response.text())
+                .then(result => {
+                    if(result.includes("Success")) {
+                        btn.innerText = "✅ Saved to Drive";
+                        alert("Quotation successfully saved to Google Drive!");
+                    } else {
+                        btn.innerText = "❌ Error";
+                        alert("Failed to save: " + result);
+                    }
+                    setTimeout(() => { btn.innerText = "☁️ Save to Drive"; btn.disabled = false; }, 3000);
+                })
+                .catch(error => {
+                    btn.innerText = "❌ Upload Failed";
+                    btn.disabled = false;
+                    alert("Internet or connection error!");
+                });
             });
-        });
+        }, 500);
     }
 </script>
 
