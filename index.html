@@ -1,18 +1,22 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REY CERA - Quotation Generator</title>
-    <!-- PDF ડાઉનલોડ કરવા માટેની લાઈબ્રેરી -->
+    <title>REY CERA - Quotation System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e2e8f0; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1100px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         
-        /* --- FORM SECTION CSS --- */
-        .form-header { display: flex; align-items: center; background-color: #f1f5f9; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #cbd5e1; }
-        .form-header img { max-height: 80px; margin-right: 20px; border-radius: 8px; }
-        .form-header h2 { margin: 0; color: #1e293b; font-size: 28px; font-weight: 600; }
+        .form-header { display: flex; justify-content: space-between; align-items: center; background-color: #f1f5f9; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #cbd5e1; }
+        .header-left { display: flex; align-items: center; }
+        .header-left img { max-height: 80px; margin-right: 20px; border-radius: 8px; }
+        .header-left h2 { margin: 0; color: #1e293b; font-size: 24px; font-weight: 600; }
+        
+        .db-buttons button { background-color: #475569; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 10px;}
+        .db-buttons button:hover { background-color: #334155; }
+
         .top-input-group { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
         .top-input { flex: 1; min-width: 250px; }
         .top-input label { font-weight: bold; font-size: 15px; color: #1e293b; }
@@ -27,52 +31,47 @@
         .btn-add { background-color: #f59e0b; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 15px; }
         .btn-add:hover { background-color: #d97706; }
         .btn-remove { background-color: #ef4444; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;}
-        .btn-remove:hover { background-color: #dc2626; }
         .btn-generate { background-color: #0ea5e9; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .btn-generate:hover { background-color: #0284c7; }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-top: 0; border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; }
+        .modal-content input { width: 100%; padding: 10px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-save { background-color: #10b981; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background-color: #94a3b8; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
-        /* --- QUOTATION BILL CSS --- */
-        #quotationArea { display: none; margin-top: 40px; border: 1px solid #cbd5e1; padding: 40px; border-radius: 8px; background: #fff; position: relative;}
+        /* Status Bar */
+        #status-bar { text-align: center; padding: 10px; background-color: #fef08a; color: #854d0e; font-weight: bold; display: none; margin-bottom: 20px; border-radius: 4px; }
+
+        /* Quote Section (Hidden initially) */
+        #quotationArea { display: none; margin-top: 40px; border: 1px solid #cbd5e1; padding: 40px; border-radius: 8px; background: #fff;}
         .company-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1e293b; padding-bottom: 15px; margin-bottom: 20px; }
         .company-logo img { max-width: 150px; max-height: 150px; }
         .company-info { text-align: right; }
         .company-info h1 { margin: 0; color: #1e293b; font-size: 30px; letter-spacing: 1px;}
         .company-info p { margin: 4px 0; font-size: 14px; color: #475569; }
         .address-box { max-width: 400px; float: right; margin-bottom: 5px; line-height: 1.4;}
-        
         .quote-title-bar { text-align: center; background: #f1f5f9; padding: 10px; margin-bottom: 20px; font-weight: bold; font-size: 20px; letter-spacing: 2px; border: 1px solid #cbd5e1; color: #1e293b;}
-        
         .quote-details { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .text-right { text-align: right; }
         .text-left { text-align: left; }
-        
         .footer-info { display: flex; justify-content: space-between; margin-top: 15px; align-items: flex-start; }
         .bank-details { width: 48%; border: 2px solid #1e293b; padding: 15px; border-radius: 6px; background-color: #f8fafc; }
         .bank-details h4 { margin: 0 0 10px 0; color: #1e293b; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px; font-size: 16px;}
         .bank-details p { margin: 5px 0; font-size: 14px; font-weight: bold; color: #334155;}
         .total-section { width: 48%; }
         .clear { clear: both; }
-
         .tnc-notes-section { margin-top: 30px; border-top: 2px dashed #cbd5e1; padding-top: 20px;}
         .tnc-notes-section h4 { margin: 15px 0 8px 0; color: #1e293b; font-size: 16px; text-decoration: underline;}
         .tnc-notes-section ul { padding-left: 20px; margin-top: 5px; font-size: 13px; color: #475569; line-height: 1.6;}
-        .tnc-notes-section li { margin-bottom: 6px; text-align: justify; }
-
         .signature-section { margin-top: 40px; text-align: right; padding-right: 20px; }
-        .signature-section p { margin: 5px 0; font-size: 15px; color: #1e293b;}
         .signature-line { margin-top: 60px; border-top: 1px solid #1e293b; display: inline-block; width: 200px; padding-top: 5px; font-weight: bold;}
-
-        /* Final Action Buttons */
+        
         .final-actions { display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap; }
         .action-btn { padding: 14px 20px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 6px; flex: 1; text-align: center; color: white; min-width: 150px;}
-        .pdf-btn { background-color: #ef4444; }
-        .pdf-btn:hover { background-color: #dc2626; }
-        .print-btn { background-color: #10b981; }
-        .print-btn:hover { background-color: #059669; }
-        .whatsapp-btn { background-color: #25D366; }
-        .whatsapp-btn:hover { background-color: #128C7E; }
-        .drive-btn { background-color: #3b82f6; }
-        .drive-btn:hover { background-color: #2563eb; }
+        .pdf-btn { background-color: #ef4444; } .drive-btn { background-color: #3b82f6; } .whatsapp-btn { background-color: #25D366; } .print-btn { background-color: #10b981; }
         
         @media print {
             body { background: white; padding: 0; }
@@ -83,28 +82,40 @@
             .quote-title-bar { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; }
             .bank-details { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; }
             .tnc-notes-section { page-break-inside: avoid; }
-            .signature-section { page-break-inside: avoid; }
+            .footer-info { page-break-inside: avoid; }
         }
     </style>
 </head>
-<body>
+<body onload="loadDatabaseData()">
 
 <div class="container">
+    <div id="status-bar">🔄 Loading Database... Please wait.</div>
+
     <!-- FORM SECTION -->
     <div class="form-section">
         <div class="form-header">
-            <img src="image_42f544.png" alt="REY CERA Logo" onerror="this.style.display='none'">
-            <h2>Quotation Data Entry Panel</h2>
+            <div class="header-left">
+                <img src="image_42f544.png" alt="REY CERA Logo" onerror="this.style.display='none'">
+                <h2>Quotation ERP System</h2>
+            </div>
+            <div class="db-buttons">
+                <button onclick="openModal('custModal')">➕ Add Customer</button>
+                <button onclick="openModal('prodModal')">➕ Add Product</button>
+            </div>
         </div>
         
+        <!-- Datalists for Auto-suggestions -->
+        <datalist id="customerList"></datalist>
+        <datalist id="productList"></datalist>
+
         <div class="top-input-group">
             <div class="top-input">
                 <label>Customer / Firm Name:</label>
-                <input type="text" id="custName" placeholder="Enter customer name...">
+                <input type="text" id="custName" list="customerList" placeholder="Search customer name..." onchange="fillCustomerDetails()">
             </div>
             <div class="top-input">
                 <label>WhatsApp Mobile No:</label>
-                <input type="text" id="custPhone" placeholder="e.g. 9876543210 (Optional)">
+                <input type="text" id="custPhone" placeholder="Auto-fills from database">
             </div>
         </div>
 
@@ -122,7 +133,7 @@
             </thead>
             <tbody id="itemBody">
                 <tr>
-                    <td><input type="text" class="i-name" placeholder="e.g. PGVT Marble"></td>
+                    <td><input type="text" class="i-name" list="productList" placeholder="Search Tile..." onchange="fillProductDetails(this)"></td>
                     <td><input type="number" class="i-len" placeholder="600"></td>
                     <td><input type="number" class="i-wid" placeholder="1200"></td>
                     <td><input type="number" class="i-pcs" placeholder="2"></td>
@@ -134,12 +145,49 @@
         </table>
         
         <div class="action-buttons">
-            <button class="btn-add" onclick="addRow()">+ Add New Tile</button>
+            <button class="btn-add" onclick="addRow()">+ Add Row</button>
             <button class="btn-generate" onclick="generateQuotation()">Generate Quotation</button>
         </div>
     </div>
 
-    <!-- QUOTATION BILL SECTION -->
+    <!-- Modals -->
+    <div id="custModal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Customer</h3>
+            <label>Name / Firm:</label>
+            <input type="text" id="newCustName">
+            <label>Mobile Number:</label>
+            <input type="text" id="newCustPhone">
+            <label>City / Address:</label>
+            <input type="text" id="newCustAddr">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('custModal')">Cancel</button>
+                <button class="btn-save" onclick="saveCustomer()">Save Customer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="prodModal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Product</h3>
+            <label>Tile Name:</label>
+            <input type="text" id="newProdName">
+            <label>Length (mm):</label>
+            <input type="number" id="newProdLen">
+            <label>Width (mm):</label>
+            <input type="number" id="newProdWid">
+            <label>Pcs per Box:</label>
+            <input type="number" id="newProdPcs">
+            <label>Rate / Sq.Ft (₹):</label>
+            <input type="number" id="newProdRate" step="0.1">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('prodModal')">Cancel</button>
+                <button class="btn-save" onclick="saveProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUOTATION BILL SECTION (Hidden) -->
     <div id="quotationArea">
         <div id="pdfContent" style="padding: 20px;">
             <div class="company-header">
@@ -153,7 +201,7 @@
                     </div>
                     <div class="clear"></div>
                     <p><b>GSTIN:</b> 29ABKFR4189E1ZP | <b>Mob:</b> +91-6360036594</p>
-                    <p><b>Email:</b> reycera.showroom@gmail.com | <b>Web:</b> www.reycera.in</p>
+                    <p><b>Email:</b> info@reycera.in | <b>Web:</b> www.reycera.in</p>
                 </div>
             </div>
 
@@ -181,9 +229,7 @@
                         <th class="text-right">Amount (₹)</th>
                     </tr>
                 </thead>
-                <tbody id="qItemsBody">
-                    <!-- Items will load here -->
-                </tbody>
+                <tbody id="qItemsBody"></tbody>
             </table>
 
             <div class="footer-info">
@@ -193,25 +239,12 @@
                     <p>A/C NO : 8884746226</p>
                     <p>IFCS : KKBK0008151 (TC PALYA)</p>
                 </div>
-
                 <div class="total-section">
                     <table class="quote-table" style="margin-bottom:0;">
-                        <tr>
-                            <td class="text-left"><strong>Basic Amount:</strong></td>
-                            <td class="text-right" id="qBasic">₹0.00</td>
-                        </tr>
-                        <tr>
-                            <td class="text-left"><strong>Add: CGST (9%):</strong></td>
-                            <td class="text-right" id="qCgst">₹0.00</td>
-                        </tr>
-                        <tr>
-                            <td class="text-left"><strong>Add: SGST (9%):</strong></td>
-                            <td class="text-right" id="qSgst">₹0.00</td>
-                        </tr>
-                        <tr>
-                            <td class="text-left" style="font-size:18px;"><strong>Grand Total:</strong></td>
-                            <td class="text-right" style="font-size:20px; font-weight:bold; color:#0f172a;" id="qTotal">₹0.00</td>
-                        </tr>
+                        <tr><td class="text-left"><strong>Basic Amount:</strong></td><td class="text-right" id="qBasic">₹0.00</td></tr>
+                        <tr><td class="text-left"><strong>Add: CGST (9%):</strong></td><td class="text-right" id="qCgst">₹0.00</td></tr>
+                        <tr><td class="text-left"><strong>Add: SGST (9%):</strong></td><td class="text-right" id="qSgst">₹0.00</td></tr>
+                        <tr><td class="text-left" style="font-size:18px;"><strong>Grand Total:</strong></td><td class="text-right" style="font-size:20px; font-weight:bold; color:#0f172a;" id="qTotal">₹0.00</td></tr>
                     </table>
                 </div>
             </div>
@@ -223,17 +256,13 @@
                     <li><b>Installation Tip:</b> We strongly recommend inspecting all tiles under natural light for shade consistency before installation. Please ensure a professional mason handles the fixing to avoid breakage.</li>
                     <li><b>Batch Matching:</b> If you require additional stock for the same project, please mention the Batch Number/Mojo Number to ensure a perfect shade match.</li>
                     <li><b>Storage:</b> Please ensure tiles are stored on a flat, dry surface and handled vertically to minimize the risk of edge chipping.</li>
-                    <li><b>Support:</b> For any technical queries regarding installation or maintenance, feel free to reach out to our Bangalore office. Looking forward for your business.</li>
                 </ul>
-
                 <h4>Terms & Conditions</h4>
                 <ul>
-                    <li><b>Validity:</b> This quotation is valid for 7 days from the date of issue. Prices are subject to change without prior notice due to fluctuations in raw material costs or government taxes.</li>
+                    <li><b>Validity:</b> This quotation is valid for 7 days from the date of issue. Prices are subject to change without prior notice.</li>
                     <li><b>Taxes:</b> GST @ 18% (or as applicable) will be charged extra on the quoted price unless mentioned otherwise. <i>(All above rates are calculated inclusive of 18% GST).</i></li>
                     <li><b>Payment Terms:</b> 100% advance payment is required before dispatch. For bulk project orders, a 50% advance is required to process the order, with the balance due before delivery.</li>
-                    <li><b>Delivery & Freight:</b> Prices are Ex-Warehouse Bangalore unless specified. Loading, unloading, and transportation charges are to be borne by the customer.</li>
-                    <li><b>Breakage & Shortage:</b> Our responsibility ceases once the goods leave our warehouse. Customers are advised to check for any transit breakage or shortages at the time of delivery and note it on the Lorry Receipt (LR). No claims will be entertained after the vehicle leaves the site.</li>
-                    <li><b>Shade & Size Variation:</b> Variation in shade, size, and thickness is an inherent characteristic of ceramic/vitrified tiles. No complaints will be entertained after laying the material.</li>
+                    <li><b>Breakage & Shortage:</b> Our responsibility ceases once the goods leave our warehouse. Customers are advised to check for any transit breakage or shortages at the time of delivery.</li>
                 </ul>
             </div>
 
@@ -243,10 +272,9 @@
             </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="final-actions">
             <button class="action-btn pdf-btn" onclick="downloadPDF()">⬇️ Download PDF</button>
-            <button class="action-btn drive-btn" id="driveBtn" onclick="saveToDrive()">☁️ Save to Drive</button>
+            <button class="action-btn drive-btn" id="driveBtn" onclick="saveToDrive()">☁️ Save to Drive & DB</button>
             <button class="action-btn whatsapp-btn" onclick="sendWhatsApp()">💬 WhatsApp</button>
             <button class="action-btn print-btn" onclick="window.print()">🖨️ Print</button>
         </div>
@@ -254,35 +282,124 @@
 </div>
 
 <script>
+    // ---------------------------------------------------------
+    // અહી તમારો નવો WEB APP URL નાખો
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwx5Xh3X8iDKmtHZdIO8L-qy-Hnh2quKF2HWZRs0gENhJqx4uhr9MfDW1ehqgB28kjE/exec";
+    // ---------------------------------------------------------
+
+    let customers = [];
+    let products = [];
     let currentBillData = {};
 
+    // 1. Load Data from Google Sheets on Page Load
+    function loadDatabaseData() {
+        document.getElementById('status-bar').style.display = 'block';
+        
+        // Fetch Customers
+        fetch(SCRIPT_URL + "?action=getCustomers")
+            .then(res => res.json())
+            .then(data => {
+                customers = data.slice(1); // Skip Header
+                let list = document.getElementById('customerList');
+                list.innerHTML = "";
+                customers.forEach(c => list.innerHTML += `<option value="${c[0]}">`);
+            });
+
+        // Fetch Products
+        fetch(SCRIPT_URL + "?action=getProducts")
+            .then(res => res.json())
+            .then(data => {
+                products = data.slice(1); // Skip Header
+                let list = document.getElementById('productList');
+                list.innerHTML = "";
+                products.forEach(p => list.innerHTML += `<option value="${p[0]}">`);
+                document.getElementById('status-bar').style.display = 'none';
+            })
+            .catch(err => {
+                document.getElementById('status-bar').innerText = "⚠️ Failed to load database.";
+                setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
+            });
+    }
+
+    // 2. Auto-fill functions
+    function fillCustomerDetails() {
+        let name = document.getElementById('custName').value;
+        let cust = customers.find(c => c[0] == name);
+        if(cust) document.getElementById('custPhone').value = cust[1];
+    }
+
+    function fillProductDetails(inputElem) {
+        let name = inputElem.value;
+        let prod = products.find(p => p[0] == name);
+        if(prod) {
+            let tr = inputElem.parentElement.parentElement;
+            tr.querySelector('.i-len').value = prod[1];
+            tr.querySelector('.i-wid').value = prod[2];
+            tr.querySelector('.i-pcs').value = prod[3];
+            tr.querySelector('.i-rate').value = prod[4];
+        }
+    }
+
+    // 3. Modals and Saving to DB
+    function openModal(id) { document.getElementById(id).style.display = 'block'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function saveCustomer() {
+        let name = document.getElementById('newCustName').value;
+        let phone = document.getElementById('newCustPhone').value;
+        let addr = document.getElementById('newCustAddr').value;
+        if(!name) return alert("Name is required!");
+
+        document.getElementById('status-bar').innerText = "Saving Customer...";
+        document.getElementById('status-bar').style.display = 'block';
+        closeModal('custModal');
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'addCustomer', name: name, phone: phone, address: addr })
+        }).then(res => { loadDatabaseData(); alert("Customer Added!"); });
+    }
+
+    function saveProduct() {
+        let name = document.getElementById('newProdName').value;
+        let len = document.getElementById('newProdLen').value;
+        let wid = document.getElementById('newProdWid').value;
+        let pcs = document.getElementById('newProdPcs').value;
+        let rate = document.getElementById('newProdRate').value;
+        if(!name || !rate) return alert("Name and Rate required!");
+
+        document.getElementById('status-bar').innerText = "Saving Product...";
+        document.getElementById('status-bar').style.display = 'block';
+        closeModal('prodModal');
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'addProduct', tileName: name, length: len, width: wid, pcs: pcs, rate: rate })
+        }).then(res => { loadDatabaseData(); alert("Product Added!"); });
+    }
+
+    // 4. UI Table Functions
     function addRow() {
         let tbody = document.getElementById('itemBody');
         let tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" class="i-name" placeholder="e.g. High Gloss"></td>
-            <td><input type="number" class="i-len" placeholder="800"></td>
-            <td><input type="number" class="i-wid" placeholder="1600"></td>
+            <td><input type="text" class="i-name" list="productList" placeholder="Search Tile..." onchange="fillProductDetails(this)"></td>
+            <td><input type="number" class="i-len" placeholder="600"></td>
+            <td><input type="number" class="i-wid" placeholder="1200"></td>
             <td><input type="number" class="i-pcs" placeholder="2"></td>
-            <td><input type="number" class="i-sqft" placeholder="1000"></td>
-            <td><input type="number" class="i-rate" placeholder="55.0"></td>
+            <td><input type="number" class="i-sqft" placeholder="500"></td>
+            <td><input type="number" class="i-rate" placeholder="45.5"></td>
             <td><button class="btn-remove" onclick="removeRow(this)">X</button></td>
         `;
         tbody.appendChild(tr);
     }
+    function removeRow(btn) { btn.parentElement.parentElement.remove(); }
 
-    function removeRow(btn) {
-        btn.parentElement.parentElement.remove();
-    }
-
+    // 5. Quotation Generation
     function generateQuotation() {
         let custName = document.getElementById('custName').value;
         let custPhone = document.getElementById('custPhone').value;
-        
-        if(!custName) {
-            alert("કૃપા કરીને ગ્રાહકનું નામ દાખલ કરો!");
-            return;
-        }
+        if(!custName) return alert("કૃપા કરીને ગ્રાહકનું નામ દાખલ કરો!");
 
         let rows = document.querySelectorAll('#itemBody tr');
         let qItemsBody = document.getElementById('qItemsBody');
@@ -299,10 +416,7 @@
             let reqSqft = parseFloat(rows[i].querySelector('.i-sqft').value);
             let rate = parseFloat(rows[i].querySelector('.i-rate').value);
 
-            if(!name || !len || !wid || !pcs || !reqSqft || !rate) {
-                alert(`લાઈન ${i+1} માં બધી માહિતી ભરો.`);
-                return;
-            }
+            if(!name || !len || !wid || !pcs || !reqSqft || !rate) return alert(`લાઈન ${i+1} માં બધી માહિતી ભરો.`);
 
             let sqftPerBox = ((len * wid) / 92903.04) * pcs;
             let totalBoxes = Math.ceil(reqSqft / sqftPerBox);
@@ -316,158 +430,70 @@
             tr.innerHTML = `
                 <td class="text-left">
                     <strong style="font-size:15px; color:#1e293b;">${name}</strong><br>
-                    <span style="color:#64748b; font-size:12px;">
-                        Size: ${len}x${wid} mm <br>
-                        Pcs/Box: <b style="color:#334155;">${pcs} Pcs</b> | Sq.Ft/Box: <b style="color:#334155;">${sqftPerBox.toFixed(2)} Sq.Ft</b>
-                    </span>
+                    <span style="color:#64748b; font-size:12px;">Size: ${len}x${wid} mm | Pcs/Box: <b>${pcs} Pcs</b></span>
                 </td>
                 <td style="color:#ef4444; font-weight:bold;">${reqSqft.toFixed(2)}</td>
-                <td style="color:#059669;">
-                    <b style="font-size:15px;">${totalBoxes} Boxes</b><br>
-                    <small>(${billedSqFt.toFixed(2)} Sq.Ft)</small>
-                </td>
+                <td style="color:#059669;"><b style="font-size:15px;">${totalBoxes} Boxes</b><br><small>(${billedSqFt.toFixed(2)} Sq.Ft)</small></td>
                 <td>₹${rate.toFixed(2)}</td>
-                <td class="text-right" style="font-weight:bold; font-size:15px;">₹${itemTotalAmount.toFixed(2)}</td>
+                <td class="text-right" style="font-weight:bold;">₹${itemTotalAmount.toFixed(2)}</td>
             `;
             qItemsBody.appendChild(tr);
         }
 
         let basicAmount = grandTotal / 1.18;
-        let totalGst = grandTotal - basicAmount;
-        let cgst = totalGst / 2;
-        let sgst = totalGst / 2;
+        let cgst = (grandTotal - basicAmount) / 2;
 
         let dateObj = new Date();
-        let formattedDate = dateObj.getDate().toString().padStart(2, '0') + '/' + 
-                            (dateObj.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                            dateObj.getFullYear();
+        let formattedDate = dateObj.getDate().toString().padStart(2, '0') + '/' + (dateObj.getMonth() + 1).toString().padStart(2, '0') + '/' + dateObj.getFullYear();
         let quoteNo = Math.floor(Math.random() * 90000) + 10000;
 
         document.getElementById('qCustName').innerText = custName;
         document.getElementById('qCustPhone').innerText = custPhone ? "Mo: " + custPhone : "";
         document.getElementById('qDate').innerText = formattedDate;
         document.getElementById('qNo').innerText = quoteNo;
-
         document.getElementById('qBasic').innerText = "₹ " + basicAmount.toFixed(2);
         document.getElementById('qCgst').innerText = "₹ " + cgst.toFixed(2);
-        document.getElementById('qSgst').innerText = "₹ " + sgst.toFixed(2);
+        document.getElementById('qSgst').innerText = "₹ " + cgst.toFixed(2);
         document.getElementById('qTotal').innerText = "₹ " + grandTotal.toFixed(2);
 
-        currentBillData = {
-            name: custName,
-            phone: custPhone,
-            no: quoteNo,
-            date: formattedDate,
-            items: itemsForWhatsApp,
-            total: grandTotal.toFixed(2)
-        };
-
+        currentBillData = { name: custName, phone: custPhone, no: quoteNo, date: formattedDate, items: itemsForWhatsApp, total: grandTotal.toFixed(2) };
         document.getElementById('quotationArea').style.display = 'block';
     }
 
-    // Function to Download PDF
+    // 6. Action Functions
     function downloadPDF() {
-        const element = document.getElementById('pdfContent');
-        const customerName = document.getElementById('qCustName').innerText;
-        const quoteNo = document.getElementById('qNo').innerText;
-        const fileName = `Quotation_${customerName}_${quoteNo}.pdf`;
-
-        const opt = {
-            margin:       [0.3, 0.2, 0.3, 0.2],
-            filename:     fileName,
-            image:        { type: 'jpeg', quality: 1 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-
-        // Delay ઉમેર્યો જેથી ફોટા અને સ્ટાઇલ બરાબર લોડ થાય
-        setTimeout(() => {
-            html2pdf().set(opt).from(element).save();
-        }, 500);
+        const opt = { margin: [0.3, 0.2, 0.3, 0.2], filename: `Quotation_${currentBillData.name}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
+        setTimeout(() => { html2pdf().set(opt).from(document.getElementById('pdfContent')).save(); }, 500);
     }
 
-    // Function to Send WhatsApp
     function sendWhatsApp() {
-        if(!currentBillData.name) {
-            alert("Please generate the quotation first.");
-            return;
-        }
-
-        let message = `Hello *${currentBillData.name}*,\n\nHere is the summary of your quotation from *REY CERA*.\n\n`;
-        message += `*Estimate No:* #${currentBillData.no}\n`;
-        message += `*Date:* ${currentBillData.date}\n\n`;
-        message += `*Items:*\n${currentBillData.items}\n`;
-        message += `*Grand Total (Incl. 18% GST): ₹${currentBillData.total}*\n\n`;
-        message += `Thank you for choosing REY CERA! 🙏\n(Please check the attached PDF for full details and Bank info.)`;
-
-        let encodedMessage = encodeURIComponent(message);
-        let phone = currentBillData.phone.replace(/[^0-9]/g, ''); 
-        let waLink = "";
-
-        if(phone.length >= 10) {
-            if(phone.length === 10) phone = "91" + phone; 
-            waLink = `https://wa.me/${phone}?text=${encodedMessage}`;
-        } else {
-            waLink = `https://api.whatsapp.com/send?text=${encodedMessage}`;
-        }
-
-        window.open(waLink, '_blank');
+        let msg = encodeURIComponent(`Hello *${currentBillData.name}*,\n\nHere is your quotation summary from *REY CERA*.\n\n*Estimate No:* #${currentBillData.no}\n*Date:* ${currentBillData.date}\n\n*Items:*\n${currentBillData.items}\n*Grand Total (Incl. 18% GST): ₹${currentBillData.total}*\n\nThank you for choosing REY CERA! 🙏`);
+        let phone = currentBillData.phone.replace(/[^0-9]/g, '');
+        if(phone.length === 10) phone = "91" + phone;
+        window.open(phone.length >= 10 ? `https://wa.me/${phone}?text=${msg}` : `https://api.whatsapp.com/send?text=${msg}`, '_blank');
     }
 
-    // Function to Save PDF to Google Drive
-   function saveToDrive() {
-        let custName = document.getElementById('qCustName').innerText;
-        if(custName === "Customer Name" || custName === "") {
-            alert("Please generate the quotation first!");
-            return;
-        }
-
-        const element = document.getElementById('pdfContent');
-        const quoteNo = document.getElementById('qNo').innerText;
-        const fileName = `Quotation_${custName}_${quoteNo}.pdf`;
-
+    function saveToDrive() {
         let btn = document.getElementById('driveBtn');
-        btn.innerText = "⏳ Uploading...";
-        btn.disabled = true;
+        btn.innerText = "⏳ Saving..."; btn.disabled = true;
 
-        const opt = {
-            margin:       [0.3, 0.2, 0.3, 0.2],
-            filename:     fileName,
-            image:        { type: 'jpeg', quality: 1 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
+        const opt = { margin: [0.3, 0.2, 0.3, 0.2], filename: `Quotation_${currentBillData.name}_${currentBillData.no}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } };
 
-        // Delay સાથે PDF જનરેટ કરો
         setTimeout(() => {
-            html2pdf().set(opt).from(element).outputPdf('datauristring').then(function(pdfBase64) {
-                let base64Data = pdfBase64.split(',')[1];
-                let scriptURL = "https://script.google.com/macros/s/AKfycbx9XFkos_FOQSM9gfByhAIgH06k9xVEV2USDsNYcz61tG7s8o23A1CKRP4dcgUFYSSI/exec";
-
-                fetch(scriptURL, {
+            html2pdf().set(opt).from(document.getElementById('pdfContent')).outputPdf('datauristring').then(function(pdfBase64) {
+                fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ filename: fileName, base64: base64Data })
-                })
-                .then(response => response.text())
-                .then(result => {
-                    if(result.includes("Success")) {
-                        btn.innerText = "✅ Saved to Drive";
-                        alert("Quotation successfully saved to Google Drive!");
-                    } else {
-                        btn.innerText = "❌ Error";
-                        alert("Failed to save: " + result);
-                    }
-                    setTimeout(() => { btn.innerText = "☁️ Save to Drive"; btn.disabled = false; }, 3000);
-                })
-                .catch(error => {
-                    btn.innerText = "❌ Upload Failed";
-                    btn.disabled = false;
-                    alert("Internet or connection error!");
-                });
+                    body: JSON.stringify({
+                        action: 'saveQuotation', filename: opt.filename, base64: pdfBase64.split(',')[1],
+                        custName: currentBillData.name, custPhone: currentBillData.phone, total: currentBillData.total
+                    })
+                }).then(res => res.text()).then(result => {
+                    alert("Saved Successfully to Google Drive & Sheet!");
+                    btn.innerText = "☁️ Save to Drive & DB"; btn.disabled = false;
+                }).catch(err => { alert("Error saving data."); btn.innerText = "☁️ Save to Drive & DB"; btn.disabled = false; });
             });
         }, 500);
     }
 </script>
-
 </body>
 </html>
